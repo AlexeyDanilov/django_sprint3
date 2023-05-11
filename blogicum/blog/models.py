@@ -3,9 +3,10 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+_MAX_LENGTH = 256
+
 
 class BaseModel(models.Model):
-    title = models.CharField(verbose_name='Заголовок', max_length=256)
     is_published = models.BooleanField(
         verbose_name='Опубликовано',
         default=True,
@@ -23,27 +24,23 @@ class BaseModel(models.Model):
         return self.title
 
 
-class Post(BaseModel):
-    text = models.TextField(verbose_name='Текст', )
-    pub_date = models.DateTimeField(
-        verbose_name='Дата и время публикации',
-        help_text='Если установить дату и время в будущем — '
-                  'можно делать отложенные публикации.'
+class Location(BaseModel):
+    name = models.CharField(
+        verbose_name='Название места',
+        max_length=_MAX_LENGTH,
+        default='Планета Земля'
     )
-    author = models.ForeignKey(User, on_delete=models.CASCADE,
-                               verbose_name='Автор публикации')
-    location = models.ForeignKey('Location', on_delete=models.SET_NULL,
-                                 null=True, blank=True,
-                                 verbose_name='Местоположение')
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL,
-                                 verbose_name='Категория', null=True)
 
     class Meta:
-        verbose_name = 'публикация'
-        verbose_name_plural = 'Публикации'
+        verbose_name = 'местоположение'
+        verbose_name_plural = 'Местоположения'
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Category(BaseModel):
+    title = models.CharField(verbose_name='Заголовок', max_length=_MAX_LENGTH)
     description = models.TextField(verbose_name='Описание')
     slug = models.SlugField(
         verbose_name='Идентификатор',
@@ -57,17 +54,33 @@ class Category(BaseModel):
         verbose_name_plural = 'Категории'
 
 
-class Location(BaseModel):
-    name = models.CharField(
-        verbose_name='Название места',
-        max_length=256,
-        default='Планета Земля'
+class Post(BaseModel):
+    title = models.CharField(verbose_name='Заголовок', max_length=_MAX_LENGTH)
+    text = models.TextField(verbose_name='Текст')
+    pub_date = models.DateTimeField(
+        verbose_name='Дата и время публикации',
+        help_text='Если установить дату и время в будущем — '
+                  'можно делать отложенные публикации.'
     )
-    title = None
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор публикации'
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name='Местоположение'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        verbose_name='Категория', null=True
+    )
 
     class Meta:
-        verbose_name = 'местоположение'
-        verbose_name_plural = 'Местоположения'
-
-    def __str__(self) -> str:
-        return self.name
+        verbose_name = 'публикация'
+        verbose_name_plural = 'Публикации'
+        default_related_name = 'posts'
+        ordering = ('-pub_date',)
