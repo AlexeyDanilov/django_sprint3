@@ -5,6 +5,18 @@ from django.shortcuts import render, get_object_or_404
 from .models import Post, Category
 
 
+def get_base_queryset():
+    return Post.objects.select_related(
+        'category',
+        'author',
+        'location'
+    ).filter(
+        pub_date__lte=datetime.now(),
+        is_published=True,
+        category__is_published=True
+    )
+
+
 def index(request):
     post_list = get_base_queryset()[:5]
     return render(
@@ -39,16 +51,4 @@ def category_posts(request, category_slug):
         request=request,
         template_name='blog/category.html',
         context=context
-    )
-
-
-def get_base_queryset():
-    return Post.objects.select_related(
-        'category',
-        'author',
-        'location'
-    ).filter(
-        pub_date__lte=datetime.now(),
-        is_published=True,
-        category__is_published=True
     )
